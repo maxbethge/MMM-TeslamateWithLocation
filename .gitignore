@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+images/cars/_try_*
+images/cars/_cgi_*

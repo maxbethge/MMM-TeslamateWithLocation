@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MMM-TeslamateWithLocation preview</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../MMM-TeslamateWithLocation.css?v=1" />
+  <style>
+    html, body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: "Roboto Condensed", Roboto, "Helvetica Neue", sans-serif;
+      font-weight: 300;
+    }
+    .mirror {
+      min-height: 100vh;
+      padding: 36px 48px 48px;
+      box-sizing: border-box;
+      background: radial-gradient(ellipse at top, #151515 0%, #000 55%);
+    }
+    .region {
+      display: flex;
+      gap: 56px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+    .module h2 {
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.35);
+      padding-bottom: 6px;
+      margin: 0 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mirror">
+    <div class="region">
+      <div class="module" id="model3"></div>
+      <div class="module" id="modely"></div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const model3 = {
+      displayName: "Model 3",
+      batteryLevel: 72,
+      batteryUsable: 71,
+      chargeTarget: 80,
+      chargeLimitSoc: 80,
+      rangeKm: 354,
+      odometerKm: 68420,
+      tires: { fl: 2.9, fr: 2.9, rl: 2.8, rr: 2.8, unit: "bar", count: 4 },
+      pluggedIn: true,
+      charging: true,
+      chargingState: "Charging",
+      chargeEnergyAdded: 12.4,
+      timeToFullCharge: 1.58,
+      latitude: 37.3947,
+      longitude: -122.1503,
+      outsideTempC: 18,
+      insideTempC: 21,
+      climateOn: true,
+      chargerVoltage: 240,
+      geofence: "Home",
+      lastUpdated: new Date().toISOString()
+    };
+    const modelY = {
+      displayName: "Model Y",
+      batteryLevel: 55,
+      batteryUsable: 54,
+      chargeTarget: 90,
+      chargeLimitSoc: 90,
+      rangeKm: 312,
+      odometerKm: 24110,
+      tires: { fl: 2.8, fr: 2.8, rl: 2.9, rr: 2.9, unit: "bar", count: 4 },
+      pluggedIn: true,
+      charging: false,
+      latitude: 37.4419,
+      longitude: -122.143,
+      outsideTempC: 16,
+      insideTempC: 20,
+      sentry: true,
+      updateAvailable: true,
+      scheduledChargeStart: "23:00",
+      geofence: "Work",
+      lastUpdated: new Date().toISOString()
+    };
+
+    function psi(bar) {
+      return Math.round(bar * 14.503773773);
+    }
+    function mi(km) {
+      return Math.round(km / 1.609344).toLocaleString() + " mi";
+    }
+    function f(c) {
+      return Math.round(c * 9 / 5 + 32) + "°F";
+    }
+    function etaHours(h) {
+      const hrs = Math.floor(h);
+      const mins = Math.ceil((h - hrs) * 60);
+      return hrs > 0 ? hrs + "h " + mins + "m" : mins + " min";
+    }
+
+    function renderModule(el, v, opts) {
+      el.innerHTML = opts.showHeader === false ? "" : `<h2>${v.displayName}</h2>`;
+      const root = document.createElement("div");
+      root.className = "tml";
+      root.style.width = "450px";
+      root.appendChild(graphic(v, opts));
+      root.appendChild(metrics(v));
+      root.appendChild(mapBox(v, el.id + "-map", opts));
+      el.appendChild(root);
+    }
+
+    function graphic(v, opts) {
+      const wrap = document.createElement("div");
+      wrap.className = "tml-graphic";
+      wrap.style.width = "450px";
+      const useRange = opts.rangeDisplay === "range";
+      const hudNumber = useRange ? Math.round(v.rangeKm / 1.609344) : v.batteryUsable;
+      const hudUnit = useRange ? "mi" : "%";
+      const status = [];
+      if (v.charging) status.push("mdi-lightning-bolt", "mdi-power-plug");
+      else if (v.pluggedIn) status.push("mdi-power-plug");
+      if (v.sentry) status.push("mdi-cctv");
+      if (v.climateOn) status.push("mdi-air-conditioner");
+      wrap.innerHTML = `
+        <div class="tml-hud">
+          <div class="tml-soc-row">
+            <div class="tml-soc"><span class="tml-soc-number">${hudNumber}</span><span class="tml-soc-unit">${hudUnit}</span></div>
+          </div>
+          <div class="tml-status-icons">${status.map((n) => `<span class="mdi ${n}"></span>`).join("")}</div>
+          <div class="tml-network-icons">
+            <div class="tml-temps"><span class="mdi mdi-car"></span>${f(v.insideTempC)}<span class="mdi mdi-thermometer"></span>${f(v.outsideTempC)}</div>
+            ${v.updateAvailable ? '<span class="mdi mdi-gift"></span>' : ""}
+            <span class="mdi mdi-signal"></span>
+          </div>
+        </div>
+        <div class="tml-car-stage" style="max-height:175px">
+          <img class="tml-car-image" src="${opts.image}" alt="${v.displayName}" style="opacity:0.9" />
+        </div>
+        <div class="tml-graphic-bottom">
+          <div class="tml-battery-bar ${v.charging ? "is-charging" : ""}">
+            <div class="tml-battery-shell" style="width:250px;height:45px">
+              <div class="tml-battery-well">
+                <div class="tml-battery-fill" style="width:${v.batteryUsable}%"></div>
+                <div class="tml-battery-target" style="left:${v.chargeTarget}%"></div>
+                <div class="tml-battery-overlay">
+                  <div class="tml-battery-soc">${v.charging ? '<span class="mdi mdi-lightning-bolt tml-battery-bolt"></span>' : ""}<span class="tml-battery-soc-number">${v.batteryUsable}</span><span class="tml-battery-soc-unit">%</span></div>
+                  ${v.chargerVoltage ? `<div class="tml-battery-voltage">${v.chargerVoltage} V</div>` : ""}
+                </div>
+              </div>
+              <div class="tml-battery-nub"></div>
+            </div>
+          </div>
+        </div>`;
+      return wrap;
+    }
+
+    function metrics(v) {
+      const rows = [];
+      if (v.charging) {
+        rows.push(["mdi-lightning-bolt", "Charge added", v.chargeEnergyAdded.toFixed(1) + " kWh"]);
+        rows.push(["mdi-clock-outline", "Time to " + v.chargeLimitSoc + "%", etaHours(v.timeToFullCharge)]);
+      }
+      rows.push(["mdi-counter", "Odometer", mi(v.odometerKm)]);
+      rows.push(["mdi-battery-charging-80", "Charge target", v.chargeTarget + "%"]);
+      if (v.scheduledChargeStart) {
+        const [h, m] = v.scheduledChargeStart.split(":");
+        const d = new Date();
+        d.setHours(Number(h), Number(m), 0, 0);
+        rows.push(["mdi-clock-start", "Scheduled charge", d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })]);
+      }
+      rows.push(["mdi-car-tire-alert", "Tires", psi(v.tires.fl) + " · " + psi(v.tires.fr) + " · " + psi(v.tires.rl) + " · " + psi(v.tires.rr) + " psi"]);
+      if (v.geofence) rows.push(["mdi-map-marker", "Location", v.geofence]);
+      rows.push(["mdi-update", "Updated", new Date(v.lastUpdated).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })]);
+      const ul = document.createElement("ul");
+      ul.className = "tml-metrics";
+      ul.innerHTML = rows.map(([icon, name, value]) =>
+        `<li class="tml-metric"><span class="icon mdi ${icon}"></span><span class="name">${name}</span><span class="value">${value}</span></li>`
+      ).join("");
+      return ul;
+    }
+
+    function mapBox(v, id, opts) {
+      const light = opts && (opts.mapStyle === "light" || opts.mapStyle === "teslamate");
+      const wrap = document.createElement("div");
+      wrap.className = light ? "tml-map-wrap tml-map-light-tiles" : "tml-map-wrap tml-map-dark-tiles";
+      wrap.style.height = "220px";
+      wrap.style.width = "100%";
+      if (!light) {
+        wrap.style.setProperty("--tml-map-tile-filter", "invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.35)");
+      }
+      const mapEl = document.createElement("div");
+      mapEl.className = "tml-map";
+      mapEl.id = id;
+      wrap.appendChild(mapEl);
+      setTimeout(() => {
+        const map = L.map(mapEl, {
+          zoomControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false
+        }).setView([v.latitude, v.longitude], 16);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+          subdomains: "abc",
+          maxZoom: 19
+        }).addTo(map);
+        L.marker([v.latitude, v.longitude], {
+          icon: L.divIcon({
+            className: "tml-marker",
+            html: '<span class="mdi mdi-car"></span>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          })
+        }).addTo(map);
+        setTimeout(() => map.invalidateSize(), 300);
+      }, 80);
+      return wrap;
+    }
+
+    const params = new URLSearchParams(location.search);
+    const shot = params.get("shot");
+    if (shot !== "modely") {
+      renderModule(document.getElementById("model3"), model3, {
+        image: "../images/cars/tesla-model-3-2018-pearl-white.png?v=3",
+        mapStyle: "dark"
+      });
+    } else {
+      document.getElementById("model3").style.display = "none";
+    }
+    if (shot !== "model3") {
+      renderModule(document.getElementById("modely"), modelY, {
+        image: "../images/cars/tesla-model-y-2023-performance-deep-blue.png?v=4",
+        mapStyle: "light",
+        rangeDisplay: "range"
+      });
+    } else {
+      document.getElementById("modely").style.display = "none";
+    }
+  </script>
+</body>
+</html>

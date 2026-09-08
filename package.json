@@ -1,0 +1,28 @@
+{
+  "name": "mmm-teslamatewithlocation",
+  "version": "1.0.0",
+  "description": "MagicMirror² module for Teslamate: vehicle stats and a GPS map over MQTT.",
+  "main": "MMM-TeslamateWithLocation.js",
+  "keywords": [
+    "magicmirror",
+    "tesla",
+    "teslamate",
+    "mqtt",
+    "ev"
+  ],
+  "author": "MMM-TeslamateWithLocation",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/MMM-TeslamateWithLocation"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test lib/*.test.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.15.0"
+  }
+}
