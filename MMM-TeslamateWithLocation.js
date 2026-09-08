@@ -984,8 +984,11 @@ Module.register("MMM-TeslamateWithLocation", {
   },
 
   hasPlugVoltage(v) {
-    const n = Number(v.plugVoltage ?? v.chargerVoltage);
-    return Number.isFinite(n) && n > 0;
+    if (!v?.charging) {
+      return false;
+    }
+    const n = Number(v.plugVoltage);
+    return Number.isFinite(n) && n >= 80;
   },
 
   formatPlugVoltage(v) {

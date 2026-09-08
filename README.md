@@ -171,7 +171,7 @@ When `hybridView` is true the list shows Teslamate’s hybrid-view rows:
 - **Speed** while `state` is `driving`
 - **Updated** (last MQTT payload)
 
-Graphic status icons cover Teslamate’s asleep / driving / plug / lock / sentry / windows / occupant / doors / climate states. The battery cell shows usable SOC, optional cold-battery reserve, the charge-limit marker, and charger voltage when Teslamate publishes it.
+Graphic status icons cover Teslamate’s asleep / driving / plug / lock / sentry / windows / occupant / doors / climate states. The battery cell shows usable SOC, optional cold-battery reserve, the charge-limit marker, and charger voltage only during an active charge (Teslamate’s 1–2V disconnected sentinel is ignored).
 
 ### Map and MMM-Scenes2
 
