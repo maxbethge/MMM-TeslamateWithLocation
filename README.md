@@ -42,7 +42,7 @@ Vehicle images used in the graphic:
 
 ```bash
 cd ~/MagicMirror/modules
-git clone https://github.com/example/MMM-TeslamateWithLocation
+git clone https://github.com/maxbethge/MMM-TeslamateWithLocation
 cd MMM-TeslamateWithLocation
 npm install
 ```
