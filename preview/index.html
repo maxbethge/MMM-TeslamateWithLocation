@@ -5,7 +5,7 @@
   <title>MMM-TeslamateWithLocation preview</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../MMM-TeslamateWithLocation.css?v=1" />
+  <link rel="stylesheet" href="../MMM-TeslamateWithLocation.css?v=4" />
   <style>
     html, body {
       margin: 0;
@@ -67,6 +67,7 @@
       insideTempC: 21,
       climateOn: true,
       chargerVoltage: 240,
+      locked: false,
       geofence: "Home",
       lastUpdated: new Date().toISOString()
     };
@@ -128,8 +129,9 @@
       const hudNumber = useRange ? Math.round(v.rangeKm / 1.609344) : v.batteryUsable;
       const hudUnit = useRange ? "mi" : "%";
       const status = [];
-      if (v.charging) status.push("mdi-lightning-bolt", "mdi-power-plug");
-      else if (v.pluggedIn) status.push("mdi-power-plug");
+      if (v.charging) status.push("mdi-lightning-bolt");
+      if (v.pluggedIn) status.push("mdi-power-plug");
+      if (v.locked === false) status.push("mdi-lock-open-variant");
       if (v.sentry) status.push("mdi-cctv");
       if (v.climateOn) status.push("mdi-air-conditioner");
       wrap.innerHTML = `

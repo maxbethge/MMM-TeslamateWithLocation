@@ -161,9 +161,15 @@ Module.register("MMM-TeslamateWithLocation", {
       return;
     }
     if (notification === "TML_VEHICLE") {
+      const firstPaint = !this.vehicle;
       this.vehicle = payload.vehicle;
       this.meta = payload.meta || {};
       this.errorMessage = null;
+      if (firstPaint) {
+        this.updateDom(0);
+        this.lastRenderTimestamp = Date.now();
+        return;
+      }
       this.triggerDomUpdate();
     } else if (notification === "TML_ERROR") {
       this.errorMessage = payload.message;

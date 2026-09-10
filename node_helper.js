@@ -3,17 +3,18 @@
 const NodeHelper = require("node_helper");
 const mqtt = require("mqtt");
 const {
-  topicList,
   parseTopic,
   topicMatchesPrefix,
   makeServerKey,
   brokerUrl,
   normalizeMqttServer,
-  makeTopicPrefix
+  makeTopicPrefix,
+  subscribeTopic
 } = require("./lib/mqtt-topics");
 const { emptyVehicle, applyField, presentVehicle } = require("./lib/vehicle");
 const { demoForCar } = require("./lib/demo-data");
 const { instanceKey } = require("./lib/instance-payload");
+const { createCoalescer } = require("./lib/coalesce");
 
 module.exports = NodeHelper.create({
   requiresVersion: "2.1.0",
@@ -55,7 +56,7 @@ module.exports = NodeHelper.create({
     const carID = String(rawConfig.carID || this.carIdFromTopic(rawConfig.mqttTopic) || "1");
     const config = { ...rawConfig, carID, mqttServer };
     const key = instanceKey(config);
-    const topics = topicList(config);
+    const topics = [subscribeTopic(config)];
     const prefix = makeTopicPrefix(config);
     const existing = this.instances.get(key);
 
@@ -63,7 +64,7 @@ module.exports = NodeHelper.create({
       this.logInfo(`${this.label(existing)} already subscribed carID=${carID} prefix=${prefix}`);
       if (config.demo) {
         this.sendVehicle(existing, demoForCar(carID, config.displayName), { demo: true });
-      } else if (existing.vehicle) {
+      } else if (!existing.coalesce?.flush() && this.vehicleHasData(existing.vehicle)) {
         this.sendVehicle(existing, existing.vehicle, { cached: true });
       }
       return;
@@ -87,6 +88,11 @@ module.exports = NodeHelper.create({
     if (config.displayName) {
       instance.vehicle.displayName = config.displayName;
     }
+    instance.coalesce = createCoalescer({
+      idleMs: 80,
+      maxMs: 250,
+      onFlush: (meta) => this.sendVehicle(instance, instance.vehicle, meta)
+    });
     this.instances.set(key, instance);
 
     if (config.demo) {
@@ -109,8 +115,23 @@ module.exports = NodeHelper.create({
     this.attachBroker(instance);
     this.logInfo(
       `${this.label(instance)} MQTT ${mqttServer.address}:${mqttServer.port || 1883} ` +
-        `carID=${carID} prefix=${prefix} topics=${topics.length}`
+        `carID=${carID} prefix=${prefix} subscribe=${topics[0]}`
     );
+  },
+
+  vehicleHasData(vehicle) {
+    if (!vehicle) {
+      return false;
+    }
+    return [
+      vehicle.batteryLevel,
+      vehicle.batteryUsable,
+      vehicle.latitude,
+      vehicle.odometerKm,
+      vehicle.state,
+      vehicle.locked,
+      vehicle.pluggedIn
+    ].some((value) => value !== null && value !== undefined && value !== "");
   },
 
   carIdFromTopic(topic) {
@@ -146,8 +167,12 @@ module.exports = NodeHelper.create({
     const url = brokerUrl(server);
     const options = {
       clientId: `${this.name}-${process.pid}-${serverKey}`.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 80),
+      clean: true,
       reconnectPeriod: 5000,
-      connectTimeout: 15000
+      connectTimeout: 15000,
+      keepalive: 30,
+      protocolVersion: 4,
+      resubscribe: true
     };
     if (server.user) {
       options.username = server.user;
@@ -172,7 +197,7 @@ module.exports = NodeHelper.create({
       const topics = [...broker.topicRefCount.keys()];
       this.logInfo(`${this.name} [${serverKey}] connected, subscribing ${topics.length} topics`);
       if (topics.length) {
-        client.subscribe(topics, (err) => {
+        client.subscribe(topics, { qos: 1 }, (err) => {
           if (err) {
             this.logError(`${this.name} [${serverKey}] subscribe failed: ${err.message}`);
           }
@@ -210,7 +235,7 @@ module.exports = NodeHelper.create({
       }
     }
     if (fresh.length && broker.connected) {
-      broker.client.subscribe(fresh, (err) => {
+      broker.client.subscribe(fresh, { qos: 1 }, (err) => {
         if (err) {
           this.logError(`${this.name} [${broker.serverKey}] subscribe failed: ${err.message}`);
         } else {
@@ -238,6 +263,7 @@ module.exports = NodeHelper.create({
   },
 
   detachInstance(instance) {
+    instance?.coalesce?.cancel();
     if (!instance?.serverKey) {
       return;
     }
@@ -278,7 +304,7 @@ module.exports = NodeHelper.create({
           `${this.label(instance)} first MQTT ${topic}=${value} carID=${instance.config.carID}`
         );
       }
-      this.sendVehicle(instance, instance.vehicle, { mqtt: true, topic, value });
+      instance.coalesce?.push({ mqtt: true, topic, value });
     }
   },
 

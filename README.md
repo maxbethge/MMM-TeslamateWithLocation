@@ -8,7 +8,7 @@ MagicMirror² module for Tesla vehicles tracked by [Teslamate](https://github.co
 
 ## Features
 
-- Live Teslamate MQTT topics (battery, climate, TPMS, charge, geofence, speed, lat/lon, and the newer `location` JSON)
+- Live Teslamate MQTT topics (battery, climate, TPMS, charge, geofence, speed, lat/lon, lock, and the newer `location` JSON). On connect the module subscribes to the car’s retained snapshot so the display fills immediately instead of waiting for the next live publish.
 - One MagicMirror instance per car; multiple cars share one MQTT connection per broker without config or update collisions
 - Teslamate hybrid stats under the car graphic and battery cell
 - Leaflet map of Teslamate GPS, with hide/show recovery for [MMM-Scenes2](https://github.com/MMRIZE/MMM-Scenes2)
@@ -177,7 +177,7 @@ When `hybridView` is true the list shows Teslamate’s hybrid-view rows:
 
 Hide the alert rows with `displayOptions.serviceMode.visible: false` or `displayOptions.tpmsWarnings.visible: false`. They are omitted when Teslamate reports false.
 
-Graphic status icons cover Teslamate’s asleep / driving / plug / lock / sentry / windows / occupant / doors / climate states. The battery cell shows usable SOC, optional cold-battery reserve, the charge-limit marker, and charger voltage only during an active charge (Teslamate’s 1–2V disconnected sentinel is ignored).
+Graphic status icons cover Teslamate’s asleep / driving / charge / plug / unlocked / sentry / windows / occupant / doors / climate states on the HUD row under the SOC. The battery cell shows usable SOC, optional cold-battery reserve, the charge-limit marker, and charger voltage only during an active charge (Teslamate’s 1–2V disconnected sentinel is ignored).
 
 ### Map and MMM-Scenes2
 
