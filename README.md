@@ -145,6 +145,8 @@ displayOptions: {
   temperatureIcons: { topMargin: 0 },
   temperatures: { visible: true },
   tpms: { visible: true },
+  tpmsWarnings: { visible: true },
+  serviceMode: { visible: true },
   speed: { visible: true },
   geofence: { visible: true }
 },
@@ -162,6 +164,8 @@ carImageOptions: {
 
 When `hybridView` is true the list shows Teslamate’s hybrid-view rows:
 
+- **Service mode** (red) when `service_mode` is true
+- **TPMS warning** (yellow) listing corners with `tpms_soft_warning_*` true
 - **Charge added** and **Time to {limit}%** while charging
 - **Scheduled charge** when plugged in with `scheduled_charging_start_time`
 - **Odometer**
@@ -170,6 +174,8 @@ When `hybridView` is true the list shows Teslamate’s hybrid-view rows:
 - **Location** (geofence)
 - **Speed** while `state` is `driving`
 - **Updated** (last MQTT payload)
+
+Hide the alert rows with `displayOptions.serviceMode.visible: false` or `displayOptions.tpmsWarnings.visible: false`. They are omitted when Teslamate reports false.
 
 Graphic status icons cover Teslamate’s asleep / driving / plug / lock / sentry / windows / occupant / doors / climate states. The battery cell shows usable SOC, optional cold-battery reserve, the charge-limit marker, and charger voltage only during an active charge (Teslamate’s 1–2V disconnected sentinel is ignored).
 

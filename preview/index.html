@@ -88,6 +88,8 @@
       sentry: true,
       updateAvailable: true,
       scheduledChargeStart: "23:00",
+      serviceMode: true,
+      tpmsSoftWarningText: "Front left",
       geofence: "Work",
       lastUpdated: new Date().toISOString()
     };
@@ -165,6 +167,12 @@
 
     function metrics(v) {
       const rows = [];
+      if (v.serviceMode) {
+        rows.push(["mdi-car-wrench", "Service mode", "Active", { alert: true, color: "red" }]);
+      }
+      if (v.tpmsSoftWarningText) {
+        rows.push(["mdi-alert", "TPMS warning", v.tpmsSoftWarningText, { alert: true, color: "yellow" }]);
+      }
       if (v.charging) {
         rows.push(["mdi-lightning-bolt", "Charge added", v.chargeEnergyAdded.toFixed(1) + " kWh"]);
         rows.push(["mdi-clock-outline", "Time to " + v.chargeLimitSoc + "%", etaHours(v.timeToFullCharge)]);
@@ -182,9 +190,11 @@
       rows.push(["mdi-update", "Updated", new Date(v.lastUpdated).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })]);
       const ul = document.createElement("ul");
       ul.className = "tml-metrics";
-      ul.innerHTML = rows.map(([icon, name, value]) =>
-        `<li class="tml-metric"><span class="icon mdi ${icon}"></span><span class="name">${name}</span><span class="value">${value}</span></li>`
-      ).join("");
+      ul.innerHTML = rows.map(([icon, name, value, opts]) => {
+        const cls = opts?.alert ? "tml-metric is-alert" : "tml-metric";
+        const style = opts?.color ? ` style="color:${opts.color}"` : "";
+        return `<li class="${cls}"${style}><span class="icon mdi ${icon}"></span><span class="name">${name}</span><span class="value">${value}</span></li>`;
+      }).join("");
       return ul;
     }
 

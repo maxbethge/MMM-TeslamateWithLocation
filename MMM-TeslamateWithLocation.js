@@ -54,6 +54,8 @@ Module.register("MMM-TeslamateWithLocation", {
       temperatureIcons: { topMargin: 0 },
       temperatures: { visible: true },
       tpms: { visible: true },
+      tpmsWarnings: { visible: true },
+      serviceMode: { visible: true },
       speed: { visible: true },
       geofence: { visible: true }
     },
@@ -437,6 +439,14 @@ Module.register("MMM-TeslamateWithLocation", {
     list.className = "tml-metrics";
     this.applyMetricStyles(list);
 
+    if (this.config.displayOptions?.serviceMode?.visible !== false && v.serviceMode) {
+      this.addMetric(list, "mdi-car-wrench", "Service mode", "Active", { alert: true, color: "red" });
+    }
+
+    if (this.config.displayOptions?.tpmsWarnings?.visible !== false && v.tpmsSoftWarningText) {
+      this.addMetric(list, "mdi-alert", "TPMS warning", v.tpmsSoftWarningText, { alert: true, color: "yellow" });
+    }
+
     if (v.charging && this.config.displayOptions?.chargeAdded?.visible !== false) {
       if (v.chargeEnergyAdded !== null && v.chargeEnergyAdded !== undefined) {
         this.addMetric(list, "mdi-lightning-bolt", "Charge added", `${Number(v.chargeEnergyAdded).toFixed(1)} kWh`);
@@ -487,11 +497,21 @@ Module.register("MMM-TeslamateWithLocation", {
 
   addMetric(list, icon, name, value, options) {
     const li = document.createElement("li");
-    li.className = options?.stale ? "tml-metric is-stale" : "tml-metric";
+    const classes = ["tml-metric"];
+    if (options?.stale) {
+      classes.push("is-stale");
+    }
+    if (options?.alert) {
+      classes.push("is-alert");
+    }
+    li.className = classes.join(" ");
     if (options?.title) {
       li.title = options.title;
     }
     li.innerHTML = `<span class="icon mdi ${icon}"></span><span class="name">${this.escape(name)}</span><span class="value">${this.escape(value)}</span>`;
+    if (options?.color) {
+      li.style.color = options.color;
+    }
     list.appendChild(li);
   },
 

@@ -319,6 +319,25 @@
   text-decoration: none;
 }
 
+.tml-metric.is-alert {
+  align-items: flex-start;
+  opacity: 1;
+}
+
+.tml-metric.is-alert .icon,
+.tml-metric.is-alert .name,
+.tml-metric.is-alert .value {
+  color: inherit;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.tml-metric.is-alert .value {
+  white-space: normal;
+  text-align: right;
+  max-width: 70%;
+}
+
 .tml-map-wrap {
   margin-top: 12px;
   border-radius: 6px;
