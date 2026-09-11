@@ -250,6 +250,23 @@
   opacity: 0.95;
 }
 
+.tml-battery-overlay.has-voltage {
+  gap: 1px;
+}
+
+.tml-battery-overlay.has-voltage .tml-battery-soc-number {
+  font-size: 0.71rem;
+}
+
+.tml-battery-overlay.has-voltage .tml-battery-soc-unit {
+  font-size: 0.41rem;
+}
+
+.tml-battery-overlay.has-voltage .tml-battery-bolt,
+.tml-battery-overlay.has-voltage .tml-battery-snowflake {
+  font-size: 0.49rem;
+}
+
 .tml-battery-nub {
   position: absolute;
   right: -9px;

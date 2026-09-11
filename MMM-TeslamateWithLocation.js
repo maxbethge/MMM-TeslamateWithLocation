@@ -403,6 +403,10 @@ Module.register("MMM-TeslamateWithLocation", {
 
     const overlay = document.createElement("div");
     overlay.className = "tml-battery-overlay";
+    const showVoltage = this.hasPlugVoltage(v);
+    if (showVoltage) {
+      overlay.classList.add("has-voltage");
+    }
     const socLine = document.createElement("div");
     socLine.className = "tml-battery-soc";
     if (v.charging) {
@@ -423,7 +427,7 @@ Module.register("MMM-TeslamateWithLocation", {
     socLine.appendChild(num);
     socLine.appendChild(unit);
     overlay.appendChild(socLine);
-    if (this.hasPlugVoltage(v)) {
+    if (showVoltage) {
       const volts = document.createElement("div");
       volts.className = "tml-battery-voltage";
       volts.textContent = this.formatPlugVoltage(v);

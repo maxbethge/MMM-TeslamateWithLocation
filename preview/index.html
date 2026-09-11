@@ -5,7 +5,7 @@
   <title>MMM-TeslamateWithLocation preview</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../MMM-TeslamateWithLocation.css?v=4" />
+  <link rel="stylesheet" href="../MMM-TeslamateWithLocation.css?v=5" />
   <style>
     html, body {
       margin: 0;
@@ -155,7 +155,7 @@
               <div class="tml-battery-well">
                 <div class="tml-battery-fill" style="width:${v.batteryUsable}%"></div>
                 <div class="tml-battery-target" style="left:${v.chargeTarget}%"></div>
-                <div class="tml-battery-overlay">
+                <div class="tml-battery-overlay${v.chargerVoltage ? " has-voltage" : ""}">
                   <div class="tml-battery-soc">${v.charging ? '<span class="mdi mdi-lightning-bolt tml-battery-bolt"></span>' : ""}<span class="tml-battery-soc-number">${v.batteryUsable}</span><span class="tml-battery-soc-unit">%</span></div>
                   ${v.chargerVoltage ? `<div class="tml-battery-voltage">${v.chargerVoltage} V</div>` : ""}
                 </div>
